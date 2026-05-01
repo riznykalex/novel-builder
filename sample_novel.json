@@ -1,0 +1,734 @@
+{
+  "version": 3,
+  "timestamp": "2026-05-01T22:24:06.922Z",
+  "workspace": {
+    "blocks": {
+      "languageVersion": 0,
+      "blocks": [
+        {
+          "type": "start_scene",
+          "id": "9HYY)A^GckVniV|w8C+f",
+          "x": -388,
+          "y": -178,
+          "fields": {
+            "NAME": "Початок"
+          },
+          "next": {
+            "block": {
+              "type": "set_variable",
+              "id": "L{)#X8*ieWgGuiD-G0~(",
+              "fields": {
+                "VAR": "Сміливість",
+                "VALUE": 100
+              },
+              "next": {
+                "block": {
+                  "type": "set_variable",
+                  "id": ")D`$ebRQ-.2Z*/j@=pDN",
+                  "fields": {
+                    "VAR": "розум",
+                    "VALUE": 100
+                  },
+                  "next": {
+                    "block": {
+                      "type": "set_variable",
+                      "id": "_J}I5=~#::|[#1d5fmqL",
+                      "fields": {
+                        "VAR": "Хитрість",
+                        "VALUE": 100
+                      },
+                      "next": {
+                        "block": {
+                          "type": "set_background",
+                          "id": "7x57TUfliLTF]G:]sxzU",
+                          "fields": {
+                            "LABEL": "✓ фон дерево.png"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "display_text",
+                              "id": "!W!NY/An0mlh0g}i[-(b",
+                              "fields": {
+                                "SPEAKER": "Опис",
+                                "TEXT": "Парк, вечірнє сонце. Величезний дуб, на самій верхівці якого нявчить переляканий кіт. Марта і Лео вже там."
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "show_image",
+                                  "id": "jE6M$35fCaH+CO9g^P@}",
+                                  "fields": {
+                                    "LABEL": "✓ cat_top.png",
+                                    "POSITION": "center"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "display_text",
+                                      "id": "C`g_ULNnAajvOq*em]/L",
+                                      "fields": {
+                                        "SPEAKER": "Кіт",
+                                        "TEXT": "Мяяяяууу!"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "show_image",
+                                          "id": "q(8~BQ[d4c_G)astWTeL",
+                                          "fields": {
+                                            "LABEL": "✓ Марта.png",
+                                            "POSITION": "right"
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "display_text",
+                                              "id": "7O+QabO,/6gx5^mJ?sN?",
+                                              "fields": {
+                                                "SPEAKER": "Марта",
+                                                "TEXT": "(махає рукою) Нарешті ти тут! Дивись, він же зараз впаде! Гілка ледь тримається."
+                                              },
+                                              "next": {
+                                                "block": {
+                                                  "type": "show_image",
+                                                  "id": "UR_:2OqJwl6~%63eY0zm",
+                                                  "fields": {
+                                                    "LABEL": "✓ Лео.png",
+                                                    "POSITION": "left"
+                                                  },
+                                                  "next": {
+                                                    "block": {
+                                                      "type": "display_text",
+                                                      "id": "OHf0hyjE~8j*K0$D#(F`",
+                                                      "fields": {
+                                                        "SPEAKER": "Лео",
+                                                        "TEXT": "(дивлячись у планшет) Згідно з моїми розрахунками, висота — 6 метрів. Нам потрібна драбина або спецслужби."
+                                                      },
+                                                      "next": {
+                                                        "block": {
+                                                          "type": "display_text",
+                                                          "id": "eQw)TT5TzH!Cs@`G4!9A",
+                                                          "fields": {
+                                                            "SPEAKER": "Марта",
+                                                            "TEXT": "Які служби? Вони будуть їхати вічність! Треба діяти зараз"
+                                                          },
+                                                          "next": {
+                                                            "block": {
+                                                              "type": "go_to_scene",
+                                                              "id": "a{Bt%#`)Jn.D|1-g^*!K",
+                                                              "fields": {
+                                                                "NAME": "Вибір 1"
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "start_scene",
+          "id": "V;JPL:o]HiAt].;`|dol",
+          "x": -832,
+          "y": 351,
+          "fields": {
+            "NAME": "Вибір 1"
+          },
+          "next": {
+            "block": {
+              "type": "set_background",
+              "id": "xI9Kp0.8oGFVniC(iHz5",
+              "fields": {
+                "LABEL": "✓ фон дерево.png"
+              },
+              "next": {
+                "block": {
+                  "type": "show_image",
+                  "id": "S//VGT%r0@KW%Ll=LA/|",
+                  "fields": {
+                    "LABEL": "✓ Марта.png",
+                    "POSITION": "right"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "choice",
+                      "id": "r}c1/;H8q7-%LzBJ+_v(",
+                      "inputs": {
+                        "OPTIONS": {
+                          "block": {
+                            "type": "choice_option",
+                            "id": ".alG2d)kxoNB|+1s`[KR",
+                            "fields": {
+                              "TEXT": "Я спробую залізти на дерево",
+                              "TARGET": "Ризикований підйом"
+                            },
+                            "next": {
+                              "block": {
+                                "type": "choice_option",
+                                "id": "!0!q{qpAT#9ka-3MR$kD",
+                                "fields": {
+                                  "TEXT": "Лео правий, пошукаємо драбину в садівника",
+                                  "TARGET": "Пошуки інструментів"
+                                },
+                                "next": {
+                                  "block": {
+                                    "type": "choice_option",
+                                    "id": "MT(nuedgg62c:f^j-r[s",
+                                    "fields": {
+                                      "TEXT": "Спробуємо виманити його їжею",
+                                      "TARGET": "Хитрість"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "start_scene",
+          "id": "$wy?!T#CfpvFUq-Y~j|m",
+          "x": -342,
+          "y": 650,
+          "fields": {
+            "NAME": "Ризикований підйом"
+          },
+          "next": {
+            "block": {
+              "type": "set_background",
+              "id": "pGQi]:o-{j$~4MsJUj`B",
+              "fields": {
+                "LABEL": "✓ фон дерево.png"
+              },
+              "next": {
+                "block": {
+                  "type": "change_variable",
+                  "id": "Is|hO2]zCyth6;xSeDxY",
+                  "fields": {
+                    "VAR": "Сміливість",
+                    "OP": "PLUS",
+                    "VALUE": 20
+                  },
+                  "next": {
+                    "block": {
+                      "type": "show_image",
+                      "id": "3phAR.MLQ#Aj?Q[S@34a",
+                      "fields": {
+                        "LABEL": "✓ cat_top.png",
+                        "POSITION": "center"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "display_text",
+                          "id": ",tIMeu*_,;e*!.wk+EJ@",
+                          "fields": {
+                            "SPEAKER": "Опис",
+                            "TEXT": "Макс хапається за нижню гілку."
+                          },
+                          "next": {
+                            "block": {
+                              "type": "show_image",
+                              "id": "]~TP[gLq))k][^:sd8X%",
+                              "fields": {
+                                "LABEL": "✓ Макс.png",
+                                "POSITION": "center"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "show_image",
+                                  "id": "xInklhN7!L#S40!SWk@?",
+                                  "fields": {
+                                    "LABEL": "✓ Лео.png",
+                                    "POSITION": "left"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "display_text",
+                                      "id": "wF_.N]!qS+p3,Y+E2q:/",
+                                      "fields": {
+                                        "SPEAKER": "Лео",
+                                        "TEXT": "Максе, це небезпечно! Гравітація — штука невблаганна."
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "show_image",
+                                          "id": "`o5O}}L36/+-WG[Vnjdt",
+                                          "fields": {
+                                            "LABEL": "✓ Марта.png",
+                                            "POSITION": "right"
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "display_text",
+                                              "id": "DUGKjbamA5WPxG7geaY4",
+                                              "fields": {
+                                                "SPEAKER": "Марта",
+                                                "TEXT": "Не слухай його! Ти майже дістав!"
+                                              },
+                                              "next": {
+                                                "block": {
+                                                  "type": "go_to_scene",
+                                                  "id": "rOR=3tSFb%A-Oy#$L_$L",
+                                                  "fields": {
+                                                    "NAME": "Спасли самі"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "start_scene",
+          "id": "3xzd5bOfAXoXMHVY3WiP",
+          "x": 128,
+          "y": 640,
+          "fields": {
+            "NAME": "Пошуки інструментів"
+          },
+          "next": {
+            "block": {
+              "type": "set_background",
+              "id": "@d~?p;hw,uQako+OT(=j",
+              "fields": {
+                "LABEL": "✓ фон підсобка.png"
+              },
+              "next": {
+                "block": {
+                  "type": "display_text",
+                  "id": "_J3BJ;GN7-|eseWloM;o",
+                  "fields": {
+                    "SPEAKER": "Опис",
+                    "TEXT": "Підсобне приміщення парку. Макс зустрічає суворого Садівника."
+                  },
+                  "next": {
+                    "block": {
+                      "type": "show_image",
+                      "id": ":ll39q7Tcj~:ST{XSkl0",
+                      "fields": {
+                        "LABEL": "✓ Gardener.png",
+                        "POSITION": "right"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "display_text",
+                          "id": ";V7#itmCbE$p_E?sML8-",
+                          "fields": {
+                            "SPEAKER": "Садівник",
+                            "TEXT": "Драбину? А нащо вона вам? Знову яблука крастимете?"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "show_image",
+                              "id": "B%v^reD*B_jr~2$xs8W)",
+                              "fields": {
+                                "LABEL": "✓ Макс.png",
+                                "POSITION": "left"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "choice",
+                                  "id": "AXm~dIS|r_(3x%%RwQ3:",
+                                  "inputs": {
+                                    "OPTIONS": {
+                                      "block": {
+                                        "type": "choice_option",
+                                        "id": "Ap^-[F,6NXOct@W|sW!d",
+                                        "fields": {
+                                          "TEXT": "Там кошеня може загинути, будь ласка!",
+                                          "TARGET": "Спасли з драбиною"
+                                        },
+                                        "next": {
+                                          "block": {
+                                            "type": "choice_option",
+                                            "id": "E$?mW%=ihRM#:8u,GD-0",
+                                            "fields": {
+                                              "TEXT": "Ми просто позичимо на 5 хвилин, ви й не помітите",
+                                              "TARGET": "Вибір 1"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "start_scene",
+          "id": "MV}%N_x=^N}IyA6ZJQ{q",
+          "x": 181,
+          "y": 1027,
+          "fields": {
+            "NAME": "Спасли з драбиною"
+          },
+          "next": {
+            "block": {
+              "type": "change_variable",
+              "id": "V8~/^xR7.#dW1EmWhAWT",
+              "fields": {
+                "VAR": "Розум",
+                "OP": "PLUS",
+                "VALUE": 20
+              },
+              "next": {
+                "block": {
+                  "type": "set_background",
+                  "id": "pKBb]l}C$ZsTuuN$l%ng",
+                  "fields": {
+                    "LABEL": "✓ фон дерево драби…"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "display_text",
+                      "id": "3JhX`R$W}IaXvgI=o#:(",
+                      "fields": {
+                        "SPEAKER": "",
+                        "TEXT": "Кіт врятований"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "show_image",
+                          "id": "B*akH]N{I*m2w+Bbm+tT",
+                          "fields": {
+                            "LABEL": "✓ Марта+Кіт.png",
+                            "POSITION": "right"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "display_text",
+                              "id": "03LDY`I`C9ELXX1K~Dbr",
+                              "fields": {
+                                "SPEAKER": "Марта",
+                                "TEXT": "Ти справжній герой! Рудий тепер у безпеці."
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "show_image",
+                                  "id": "#P3[~Rb)bhHui/zIt;ZT",
+                                  "fields": {
+                                    "LABEL": "✓ Лео-happy.png",
+                                    "POSITION": "center"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "show_image",
+                                      "id": "Cr6SdTjetT%6q%aRoR)}",
+                                      "fields": {
+                                        "LABEL": "✓ Макс-happy.png",
+                                        "POSITION": "left"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "choice",
+                                          "id": "8arMTqf,A7O}p@HM9v59",
+                                          "inputs": {
+                                            "OPTIONS": {
+                                              "block": {
+                                                "type": "choice_option",
+                                                "id": "{u-/kd3Z5meW9AvSi?Qm",
+                                                "fields": {
+                                                  "TEXT": "Пройти ще раз",
+                                                  "TARGET": "Початок"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "start_scene",
+          "id": "+Lrv4yH.xHe|LKiitUs*",
+          "x": -334,
+          "y": 1080,
+          "fields": {
+            "NAME": "Спасли самі"
+          },
+          "next": {
+            "block": {
+              "type": "set_background",
+              "id": "v0_fTh](*3iuc?%fmPGV",
+              "fields": {
+                "LABEL": "✓ фон дерево.png"
+              },
+              "next": {
+                "block": {
+                  "type": "display_text",
+                  "id": "5#^OFiq5(BgI26T6l{2E",
+                  "fields": {
+                    "SPEAKER": "",
+                    "TEXT": "Кіт врятований"
+                  },
+                  "next": {
+                    "block": {
+                      "type": "show_image",
+                      "id": "~w#vEKBuu0lRLRrUeP{s",
+                      "fields": {
+                        "LABEL": "✓ Марта+Кіт.png",
+                        "POSITION": "right"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "display_text",
+                          "id": "=*g}FFseK2$JwzJovf_N",
+                          "fields": {
+                            "SPEAKER": "Марта",
+                            "TEXT": "Ти справжній герой! Рудий тепер у безпеці."
+                          },
+                          "next": {
+                            "block": {
+                              "type": "show_image",
+                              "id": "!Pz7Q-3tPYEWv2.`YZ.y",
+                              "fields": {
+                                "LABEL": "✓ Лео-happy.png",
+                                "POSITION": "center"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "display_text",
+                                  "id": ")C/mJ!5fW$g#7We*@^]H",
+                                  "fields": {
+                                    "SPEAKER": "Лео",
+                                    "TEXT": "Математично кажучи... це було вражаюче."
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "show_image",
+                                      "id": "6tX-5_m*?CZNl_n0V}E+",
+                                      "fields": {
+                                        "LABEL": "✓ Макс-happy.png",
+                                        "POSITION": "left"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "choice",
+                                          "id": "^~CE@70UANe{vhpE`TE6",
+                                          "inputs": {
+                                            "OPTIONS": {
+                                              "block": {
+                                                "type": "choice_option",
+                                                "id": "(UQf9cE.;L_X^o6BR#pA",
+                                                "fields": {
+                                                  "TEXT": "Пройти ще раз",
+                                                  "TARGET": "Початок"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "start_scene",
+          "id": "y`.U/*CNpM8XK1$%/vdl",
+          "x": -845,
+          "y": 630,
+          "fields": {
+            "NAME": "Хитрість"
+          },
+          "next": {
+            "block": {
+              "type": "set_background",
+              "id": "8N6XaXu/RuXYelb+mHqn",
+              "fields": {
+                "LABEL": "✓ фон зоомагазин.png"
+              },
+              "next": {
+                "block": {
+                  "type": "change_variable",
+                  "id": "TMA]9);?z(c~+0TA1H2H",
+                  "fields": {
+                    "VAR": "Хитрість",
+                    "OP": "PLUS",
+                    "VALUE": 20
+                  },
+                  "next": {
+                    "block": {
+                      "type": "show_image",
+                      "id": "gV(YWx]^S^igkG;%.f*?",
+                      "fields": {
+                        "LABEL": "✓ Марта.png",
+                        "POSITION": "right"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "display_text",
+                          "id": "4Yn8:@;yM-G,^{cl`~7*",
+                          "fields": {
+                            "SPEAKER": "Марта",
+                            "TEXT": "Допоможіть! Терміново потрібен корм для кота!"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "show_image",
+                              "id": "bStc{%,pcnVSnMGI,nOY",
+                              "fields": {
+                                "LABEL": "✓ Продавчиня.png",
+                                "POSITION": "left"
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "display_text",
+                                  "id": "%jU5JSWj(u2/0BcN9e4J",
+                                  "fields": {
+                                    "SPEAKER": "Продавчиня",
+                                    "TEXT": "А вам який?"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "choice",
+                                      "id": "IXhrtEW(Gc[M.d(~:C=Q",
+                                      "inputs": {
+                                        "OPTIONS": {
+                                          "block": {
+                                            "type": "choice_option",
+                                            "id": "`r5ngj0]TH:S~tC1!1d(",
+                                            "fields": {
+                                              "TEXT": "З куркою",
+                                              "TARGET": "Спасли самі"
+                                            },
+                                            "next": {
+                                              "block": {
+                                                "type": "choice_option",
+                                                "id": "h*3@wXPN7f4L:q9.UMcM",
+                                                "fields": {
+                                                  "TEXT": "З рибою",
+                                                  "TARGET": "Спасли самі"
+                                                },
+                                                "next": {
+                                                  "block": {
+                                                    "type": "choice_option",
+                                                    "id": "cA~wZAgH}[5HJ,P4h0/C",
+                                                    "fields": {
+                                                      "TEXT": "Веганський",
+                                                      "TARGET": "Спасли самі"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "imageStore": {
+    "jE6M$35fCaH+CO9g^P@}": "https://i.ibb.co/yccZTqGR/38a8424077f6.png",
+    "]~TP[gLq))k][^:sd8X%": "https://i.ibb.co/CpwJWFzV/21591aa172e7.png",
+    ":ll39q7Tcj~:ST{XSkl0": "https://i.ibb.co/jPdLYJYh/94d3721012ba.png",
+    "B*akH]N{I*m2w+Bbm+tT": "https://i.ibb.co/RpGcVWrK/37c5fec0bc9e.png",
+    "#P3[~Rb)bhHui/zIt;ZT": "https://i.ibb.co/N2frzdDq/c02ced501b6f.png",
+    "Cr6SdTjetT%6q%aRoR)}": "https://i.ibb.co/DDVYzVDz/ba744873c89b.png",
+    "@d~?p;hw,uQako+OT(=j": "https://i.ibb.co/LXPrNCPm/3edbfb2f0459.png",
+    "B%v^reD*B_jr~2$xs8W)": "https://i.ibb.co/JW03PGHy/7c72230c3862.png",
+    "pKBb]l}C$ZsTuuN$l%ng": "https://i.ibb.co/k2yBZvyx/dca76e73faf7.png",
+    "xI9Kp0.8oGFVniC(iHz5": "https://i.ibb.co/dJM1tPqS/7192b201efae.png",
+    "S//VGT%r0@KW%Ll=LA/|": "https://i.ibb.co/Y4bJVfLT/41f0bce3b188.png",
+    "pGQi]:o-{j$~4MsJUj`B": "https://i.ibb.co/NgwpJn0B/877797d5c726.png",
+    "7x57TUfliLTF]G:]sxzU": "https://i.ibb.co/dJM1tPqS/7192b201efae.png",
+    "q(8~BQ[d4c_G)astWTeL": "https://i.ibb.co/Y4bJVfLT/41f0bce3b188.png",
+    "3phAR.MLQ#Aj?Q[S@34a": "https://i.ibb.co/yccZTqGR/38a8424077f6.png",
+    "`o5O}}L36/+-WG[Vnjdt": "https://i.ibb.co/Y4bJVfLT/41f0bce3b188.png",
+    "v0_fTh](*3iuc?%fmPGV": "https://i.ibb.co/dJM1tPqS/7192b201efae.png",
+    "~w#vEKBuu0lRLRrUeP{s": "https://i.ibb.co/RpGcVWrK/37c5fec0bc9e.png",
+    "!Pz7Q-3tPYEWv2.`YZ.y": "https://i.ibb.co/N2frzdDq/c02ced501b6f.png",
+    "6tX-5_m*?CZNl_n0V}E+": "https://i.ibb.co/DDVYzVDz/ba744873c89b.png",
+    "UR_:2OqJwl6~%63eY0zm": "https://i.ibb.co/sdvB1zSz/d10cb41c1897.png",
+    "8N6XaXu/RuXYelb+mHqn": "https://i.ibb.co/6JHfQH4j/7379ea02f335.png",
+    "gV(YWx]^S^igkG;%.f*?": "https://i.ibb.co/Y4bJVfLT/41f0bce3b188.png",
+    "bStc{%,pcnVSnMGI,nOY": "https://i.ibb.co/Nd6Hm8j1/21397ab9c192.png"
+  }
+}
