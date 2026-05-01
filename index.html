@@ -58,6 +58,7 @@
     width: 45%; position: relative;
     background: #000; display: flex;
     flex-direction: column; overflow: hidden;
+    justify-content: flex-end;
   }
   #background {
     position: absolute; inset: 0;
@@ -77,27 +78,34 @@
 
 
   #slots {
-    position: absolute; top: 0; left: 0; right: 0; bottom: 170px;
-    display: flex; align-items: flex-end;
+    flex: 1;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+    z-index: 1;
   }
   .slot {
     flex: 1; height: 100%;
-    display: flex; align-items: flex-end; justify-content: center;
+    position: relative;
     overflow: hidden;
   }
   .slot img {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     max-width: 100%; max-height: 100%;
     object-fit: contain; display: block;
   }
 
-
-
-  /* textbox */
+  /* textbox — завжди внизу */
   #textbox {
-    position: relative; z-index: 10;
-    background: linear-gradient(180deg, rgba(18,17,26,.0) 0%, rgba(18,17,26,.97) 18px);
+    position: relative; z-index: 2;
+    background: linear-gradient(180deg, rgba(18,17,26,0) 0%, rgba(18,17,26,.97) 18px);
     padding: 16px 18px 14px;
-    min-height: 170px; display: flex; flex-direction: column;
+    min-height: 160px; display: flex; flex-direction: column;
+    flex-shrink: 0;
   }
   #speaker {
     font-weight: 700; font-size: .9em;
@@ -107,7 +115,6 @@
   #text {
     font-size: 1em; line-height: 1.6;
     min-height: 60px; color: var(--text);
-    flex: 1;
   }
   #nextBtn {
     align-self: flex-end; margin-top: 10px;
@@ -118,12 +125,24 @@
   }
   #nextBtn:hover { background: #6b5ae0; }
 
-  #choices { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+  /* choices — поверх усього, по центру сцени (над слотами) */
+  #choices {
+    display: none;
+    position: absolute; z-index: 20;
+    top: 0; left: 0; right: 0;
+    bottom: 160px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column; gap: 10px;
+    padding: 20px;
+  }
+  #choices.visible { display: flex; }
   #choices button {
-    padding: 10px 14px; background: var(--btn-bg);
+    padding: 12px 18px; background: rgba(28,27,39,.92);
     color: var(--text); border: 1px solid var(--border);
-    border-radius: 6px; cursor: pointer; text-align: left;
-    font-size: .9em; transition: background .15s, border-color .15s;
+    border-radius: 8px; cursor: pointer; text-align: center;
+    font-size: .95em; transition: background .15s, border-color .15s;
+    backdrop-filter: blur(4px);
   }
   #choices button:hover { background: var(--btn-hover); border-color: var(--accent2); color: var(--accent2); }
 
@@ -195,11 +214,11 @@
       <div class="slot" id="slot-center"></div>
       <div class="slot" id="slot-right"></div>
     </div>
+    <div id="choices"></div>
     <div id="textbox">
       <div id="speaker"></div>
       <div id="text">Натисніть ▶ Запустити або додайте блоки для перегляду.</div>
       <button id="nextBtn" style="display:none" onclick="onNext()">Далі →</button>
-      <div id="choices"></div>
     </div>
   </div>
 </div>
@@ -273,7 +292,7 @@ Blockly.Blocks['show_image'] = {
         ]), "POSITION");
     this.setPreviousStatement(true); this.setNextStatement(true);
     this.setColour(60);
-    this.setTooltip("Натисніть на блок, щоб завантажити зображення. Кожна позиція (зліва/центр/справа) — окремий слот.");
+    this.setTooltip("Натисніть на блок, щоб завантажити зображення. Кілька блоків в одному слоті накладаються поверх одне одного.");
   }
 };
 
@@ -510,6 +529,33 @@ workspace.addChangeListener(function(event) {
   }
 });
 
+// Копіювання imageStore при дублюванні блоку
+// При Ctrl+D Blockly створює новий блок з тим самим LABEL — знаходимо донора і копіюємо URL
+workspace.addChangeListener(function(event) {
+  if (event.type !== Blockly.Events.BLOCK_CREATE) return;
+  const ids = event.ids || (event.blockId ? [event.blockId] : []);
+  ids.forEach(newId => {
+    const newBlock = workspace.getBlockById(newId);
+    if (!newBlock) return;
+    if (newBlock.type !== "set_background" && newBlock.type !== "show_image") return;
+    if (imageStore[newId]) return; // вже є
+
+    const label = newBlock.getFieldValue("LABEL");
+    if (!label || label === "натисни для завантаження") return;
+
+    // шукаємо блок-донор: той самий тип, той самий label, є URL
+    const donor = workspace.getAllBlocks(false).find(b =>
+      b.id !== newId &&
+      b.type === newBlock.type &&
+      b.getFieldValue("LABEL") === label &&
+      imageStore[b.id]
+    );
+    if (donor) {
+      imageStore[newId] = imageStore[donor.id];
+    }
+  });
+});
+
 // status bar block count
 workspace.addChangeListener(function() {
   document.getElementById('stBlocks').textContent =
@@ -542,7 +588,8 @@ function clearPreview() {
   document.getElementById("slot-right").innerHTML = "";
   document.getElementById("text").innerText = "";
   document.getElementById("speaker").innerText = "";
-  document.getElementById("choices").innerHTML = "";
+  const ch = document.getElementById("choices");
+  ch.innerHTML = ""; ch.classList.remove("visible");
   document.getElementById("nextBtn").style.display = "none";
 }
 
@@ -561,8 +608,9 @@ function showSpeech(speaker, text) {
 }
 
 function showChoices(options) {
-  // options: [{text, target}]
   document.getElementById("nextBtn").style.display = "none";
+  document.getElementById("speaker").innerText = "";
+  document.getElementById("text").innerText = "";
   const div = document.getElementById("choices");
   div.innerHTML = "";
   options.forEach(opt => {
@@ -571,6 +619,7 @@ function showChoices(options) {
     btn.onclick = () => goToScene(opt.target);
     div.appendChild(btn);
   });
+  div.classList.add("visible");
   waitingForUser = true;
 }
 
@@ -637,7 +686,6 @@ function executeBlock(block) {
         const slot  = document.getElementById("slot-" + pos);
         const el    = document.createElement("img");
         el.src = img;
-        slot.innerHTML = "";   // один спрайт на слот
         slot.appendChild(el);
       } else {
         showToast("⚠ Натисніть на блок персонажа і завантажте зображення");
@@ -762,9 +810,26 @@ function loadProject() {
       try {
         const project = JSON.parse(ev.target.result);
         Blockly.serialization.workspaces.load(project.workspace, workspace);
-        imageStore = project.imageStore || {};
+
+        // Чистимо base64 зі старих проєктів — залишаємо тільки https URL
+        const raw = project.imageStore || {};
+        let skipped = 0;
+        imageStore = {};
+        for (const [id, val] of Object.entries(raw)) {
+          if (typeof val === 'string' && val.startsWith('data:')) {
+            skipped++;
+          } else {
+            imageStore[id] = val;
+          }
+        }
+
+        if (skipped > 0) {
+          showToast(`⚠ ${skipped} зображень збережено у старому форматі — завантажте їх знову`);
+        } else {
+          showToast("Проєкт завантажено ✓");
+        }
+
         startNovel();
-        showToast("Проєкт завантажено ✓");
       } catch {
         showToast("⚠ Помилка при завантаженні файлу");
       }
@@ -792,53 +857,30 @@ function loadDemo() {
   document.getElementById("demoModal").classList.add("open");
 }
 
-function confirmDemo() {
+async function confirmDemo() {
   document.getElementById("demoModal").classList.remove("open");
-  workspace.clear();
-  imageStore = {};
-
-  const demo = {"blocks":{"languageVersion":0,"blocks":[
-    {"type":"start_scene","id":"s1","x":30,"y":30,
-     "fields":{"NAME":"Квартира"},
-     "next":{"block":{"type":"display_text","id":"t1",
-       "fields":{"SPEAKER":"Оповідач","TEXT":"Ти прокидаєшся в невеличкій квартирі. Телефон дзвонить."},
-       "next":{"block":{"type":"display_text","id":"t2",
-         "fields":{"SPEAKER":"Марта","TEXT":"Привіт! Ти ще спиш? У нас проблема…"},
-         "next":{"block":{"type":"set_variable","id":"v1",
-           "fields":{"VAR":"сміливість","VALUE":50},
-           "next":{"block":{"type":"choice","id":"c1",
-             "inputs":{"OPTIONS":{"block":{"type":"choice_option","id":"co1",
-               "fields":{"TEXT":"Одразу бігти на допомогу","TARGET":"Вулиця"},
-               "next":{"block":{"type":"choice_option","id":"co2",
-                 "fields":{"TEXT":"Спочатку з'ясувати деталі","TARGET":"Деталі"}}}}}},
-             "next":null}}}}}}}}},
-    {"type":"start_scene","id":"s2","x":30,"y":320,
-     "fields":{"NAME":"Вулиця"},
-     "next":{"block":{"type":"change_variable","id":"cv1",
-       "fields":{"VAR":"сміливість","OP":"PLUS","VALUE":20},
-       "next":{"block":{"type":"display_text","id":"t3",
-         "fields":{"SPEAKER":"Оповідач","TEXT":"Ти вибігаєш на вулицю. Серце б'ється швидко."},
-         "next":{"block":{"type":"if_show_text","id":"if1",
-           "fields":{"VAR":"сміливість","OP":"GTE","VAL":60,"SPEAKER":"Оповідач","TEXT":"Твоя сміливість висока — ти відчуваєш впевненість!"},
-           "next":{"block":{"type":"display_text","id":"t5",
-             "fields":{"SPEAKER":"Марта","TEXT":"Дякую, що прийшов! Кінець демо. 🎉"}}}}}}}}}}  ,
-    {"type":"start_scene","id":"s3","x":30,"y":560,
-     "fields":{"NAME":"Деталі"},
-     "next":{"block":{"type":"display_text","id":"t6",
-       "fields":{"SPEAKER":"Марта","TEXT":"По телефону: «Кота застряг на дереві!»"},
-       "next":{"block":{"type":"display_text","id":"t7",
-         "fields":{"SPEAKER":"Ти","TEXT":"Зрозумів. Вже їду."},
-         "next":{"block":{"type":"go_to_scene","id":"gt1",
-           "fields":{"NAME":"Вулиця"}}}}}}}}
-  ]}};
-
+  showToast("⏳ Завантаження демо...");
   try {
-    Blockly.serialization.workspaces.load(demo, workspace);
+    const res = await fetch("https://raw.githubusercontent.com/riznykalex/novel-builder/refs/heads/main/sample_novel.json");
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const project = await res.json();
+
+    workspace.clear();
+    Blockly.serialization.workspaces.load(project.workspace, workspace);
+
+    // Чистимо base64, залишаємо тільки https URL
+    imageStore = {};
+    for (const [id, val] of Object.entries(project.imageStore || {})) {
+      if (typeof val === "string" && !val.startsWith("data:")) {
+        imageStore[id] = val;
+      }
+    }
+
     startNovel();
-    showToast("Демо завантажено ✓");
+    showToast("✓ Демо завантажено");
   } catch(err) {
+    showToast("⚠ Не вдалося завантажити демо: " + err.message);
     console.error(err);
-    showToast("⚠ Не вдалося завантажити демо");
   }
 }
 
@@ -891,36 +933,47 @@ function exportGame() {
     display: flex; align-items: center; justify-content: center;
     min-height: 100vh;
   }
-  #game {
+  #wrapper {
     width: 640px; max-width: 100%;
+    display: flex; flex-direction: column;
+    box-shadow: 0 8px 48px rgba(0,0,0,.8);
+    border-radius: 8px; overflow: hidden;
+  }
+  #game {
+    width: 100%;
     aspect-ratio: 16/10;
     position: relative; background: #000;
-    display: flex; flex-direction: column;
-    overflow: hidden; border-radius: 8px;
-    box-shadow: 0 8px 48px rgba(0,0,0,.8);
+    overflow: hidden;
   }
   #background {
     position: absolute; inset: 0;
     background-size: cover; background-position: center;
   }
   #slots {
-    position: absolute; top: 0; left: 0; right: 0; bottom: 170px;
-    display: flex; align-items: flex-end;
+    position: absolute; inset: 0;
+    display: flex;
+    z-index: 1;
   }
   .slot {
     flex: 1; height: 100%;
-    display: flex; align-items: flex-end; justify-content: center;
+    position: relative;
     overflow: hidden;
   }
-  .slot img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  .slot img {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 100%; max-height: 100%;
+    object-fit: contain; display: block;
+  }
   #textbox {
-    position: relative; z-index: 10; margin-top: auto;
-    background: linear-gradient(180deg, rgba(18,17,26,0) 0%, rgba(18,17,26,.97) 18px);
-    padding: 16px 18px 14px; min-height: 170px;
+    background: rgba(18,17,26,.97);
+    padding: 16px 18px 14px; min-height: 140px;
     display: flex; flex-direction: column;
   }
   #speaker { font-weight: 700; font-size: .9em; color: #7c6af7; margin-bottom: 6px; min-height: 18px; }
-  #text { font-size: 1em; line-height: 1.6; min-height: 60px; flex: 1; }
+  #text { font-size: 1em; line-height: 1.6; min-height: 60px; }
   #nextBtn {
     align-self: flex-end; margin-top: 10px;
     padding: 8px 22px; background: #7c6af7;
@@ -928,28 +981,41 @@ function exportGame() {
     cursor: pointer; font-size: .9em;
   }
   #nextBtn:hover { background: #6b5ae0; }
-  #choices { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+  #choices {
+    display: none;
+    position: absolute; z-index: 20;
+    top: 0; left: 0; right: 0;
+    bottom: 160px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column; gap: 10px;
+    padding: 20px;
+  }
+  #choices.visible { display: flex; }
   #choices button {
-    padding: 10px 14px; background: #2a2940;
+    padding: 12px 18px; background: rgba(28,27,39,.92);
     color: #e8e6ff; border: 1px solid #35345a;
-    border-radius: 6px; cursor: pointer; text-align: left; font-size: .9em;
+    border-radius: 8px; cursor: pointer; text-align: center; font-size: .95em;
+    backdrop-filter: blur(4px);
   }
   #choices button:hover { background: #3a3860; border-color: #f76a8c; color: #f76a8c; }
 </style>
 </head>
 <body>
-<div id="game">
-  <div id="background"></div>
-  <div id="slots">
-    <div class="slot" id="slot-left"></div>
-    <div class="slot" id="slot-center"></div>
-    <div class="slot" id="slot-right"></div>
+<div id="wrapper">
+  <div id="game">
+    <div id="background"></div>
+    <div id="slots">
+      <div class="slot" id="slot-left"></div>
+      <div class="slot" id="slot-center"></div>
+      <div class="slot" id="slot-right"></div>
+    </div>
+    <div id="choices"></div>
   </div>
   <div id="textbox">
     <div id="speaker"></div>
     <div id="text"></div>
     <button id="nextBtn" style="display:none" onclick="onNext()">Далі →</button>
-    <div id="choices"></div>
   </div>
 </div>
 <script>
@@ -965,7 +1031,8 @@ function clearPreview() {
   ['left','center','right'].forEach(p => document.getElementById('slot-'+p).innerHTML = '');
   document.getElementById('text').innerText    = '';
   document.getElementById('speaker').innerText = '';
-  document.getElementById('choices').innerHTML = '';
+  const ch = document.getElementById('choices');
+  ch.innerHTML = ''; ch.classList.remove('visible');
   document.getElementById('nextBtn').style.display = 'none';
 }
 
@@ -1010,7 +1077,6 @@ function execBlock(b) {
     case 'show_image':
       if (b.url) {
         const slot = document.getElementById('slot-' + b.position);
-        slot.innerHTML = '';
         const img = document.createElement('img');
         img.src = b.url;
         slot.appendChild(img);
@@ -1047,6 +1113,8 @@ function execBlock(b) {
       return true;
     case 'choice': {
       document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('speaker').innerText = '';
+      document.getElementById('text').innerText = '';
       const div = document.getElementById('choices');
       div.innerHTML = '';
       b.options.forEach(opt => {
@@ -1055,6 +1123,7 @@ function execBlock(b) {
         btn.onclick = () => goToScene(opt.target);
         div.appendChild(btn);
       });
+      div.classList.add('visible');
       return true;
     }
     default: return false;
