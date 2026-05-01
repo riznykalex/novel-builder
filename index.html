@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>Visual Novel Builder</title>
+<script src="https://unpkg.com/blockly/blockly_compressed.js"></script>
+<script src="https://unpkg.com/blockly/msg/uk.js"></script>
+<style>
+  :root {
+    --bg: #12111a;
+    --surface: #1c1b27;
+    --panel: #22213a;
+    --border: #35345a;
+    --accent: #7c6af7;
+    --accent2: #f76a8c;
+    --text: #e8e6ff;
+    --muted: #888;
+    --btn-bg: #2a2940;
+    --btn-hover: #3a3860;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    display: flex; flex-direction: column; height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+
+  /* ── TOOLBAR ── */
+  #toolbar {
+    background: var(--surface);
+    padding: 8px 14px;
+    display: flex; gap: 8px; align-items: center;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  #toolbar .logo {
+    font-size: 1em; font-weight: 700;
+    color: var(--accent); margin-right: 8px; letter-spacing: .5px;
+  }
+  #toolbar button {
+    padding: 7px 14px; background: var(--btn-bg);
+    color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; cursor: pointer; font-size: .85em;
+    transition: background .15s, border-color .15s;
+  }
+  #toolbar button:hover { background: var(--btn-hover); border-color: var(--accent); }
+  #toolbar button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #toolbar button.primary:hover { background: #6b5ae0; }
+
+  /* ── MAIN LAYOUT ── */
+  #main { display: flex; flex: 1; overflow: hidden; }
+  #blocklyDiv { width: 55%; height: 100%; border-right: 1px solid var(--border); }
+
+  /* ── PREVIEW ── */
+  #preview {
+    width: 45%; position: relative;
+    background: #000; display: flex;
+    flex-direction: column; overflow: hidden;
+  }
+  #background {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    transition: background-image .3s;
+  }
+  #bg-placeholder {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 8px;
+    color: #333; font-size: .85em;
+    pointer-events: none;
+  }
+  #bg-placeholder .icon { font-size: 2.5em; }
+
+  /* characters */
+  #characters { position: absolute; bottom: 180px; width: 100%; }
+  .character { position: absolute; max-height: 58%; object-fit: contain; }
+  .left  { left: 5%;  bottom: 0; }
+  .right { right: 5%; bottom: 0; }
+  .center{ left: 50%; transform: translateX(-50%); bottom: 0; }
+
+  /* textbox */
+  #textbox {
+    position: relative; z-index: 10;
+    background: linear-gradient(180deg, rgba(18,17,26,.0) 0%, rgba(18,17,26,.97) 18px);
+    padding: 16px 18px 14px;
+    min-height: 170px; display: flex; flex-direction: column;
+  }
+  #speaker {
+    font-weight: 700; font-size: .9em;
+    color: var(--accent); margin-bottom: 6px;
+    min-height: 18px; letter-spacing: .3px;
+  }
+  #text {
+    font-size: 1em; line-height: 1.6;
+    min-height: 60px; color: var(--text);
+    flex: 1;
+  }
+  #nextBtn {
+    align-self: flex-end; margin-top: 10px;
+    padding: 8px 22px; background: var(--accent);
+    color: #fff; border: none; border-radius: 6px;
+    cursor: pointer; font-size: .9em;
+    transition: background .15s;
+  }
+  #nextBtn:hover { background: #6b5ae0; }
+
+  #choices { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+  #choices button {
+    padding: 10px 14px; background: var(--btn-bg);
+    color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; cursor: pointer; text-align: left;
+    font-size: .9em; transition: background .15s, border-color .15s;
+  }
+  #choices button:hover { background: var(--btn-hover); border-color: var(--accent2); color: var(--accent2); }
+
+  /* status bar */
+  #statusBar {
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 5px 14px; font-size: .75em; color: var(--muted);
+    display: flex; gap: 20px; flex-wrap: wrap;
+  }
+  #statusBar span b { color: var(--accent); }
+
+  /* toast */
+  #toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: #333; color: #fff; padding: 10px 20px;
+    border-radius: 8px; font-size: .85em;
+    opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 999;
+  }
+  #toast.show { opacity: 1; }
+
+  /* demo modal */
+  #demoModal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  #demoModal.open { display: flex; }
+  #demoBox {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px 32px; max-width: 420px; width: 90%;
+    text-align: center;
+  }
+  #demoBox h2 { margin-bottom: 10px; color: var(--accent); font-size: 1.2em; }
+  #demoBox p  { color: var(--muted); font-size: .9em; margin-bottom: 20px; line-height: 1.5; }
+  #demoBox button {
+    padding: 10px 24px; margin: 5px;
+    border-radius: 7px; border: 1px solid var(--border);
+    cursor: pointer; font-size: .9em;
+    background: var(--btn-bg); color: var(--text);
+    transition: background .15s;
+  }
+  #demoBox button.ok { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #demoBox button.ok:hover { background: #6b5ae0; }
+  #demoBox button:hover { background: var(--btn-hover); }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span class="logo">📖 VN Builder</span>
+  <button class="primary" onclick="startNovel()">▶ Запустити</button>
+  <button onclick="saveProject()">💾 Зберегти</button>
+  <button onclick="loadProject()">📂 Завантажити</button>
+  <button onclick="loadDemo()">🎓 Демо</button>
+  <button onclick="clearWorkspace()">🗑 Очистити</button>
+</div>
+
+<div id="main">
+  <div id="blocklyDiv"></div>
+  <div id="preview">
+    <div id="background"></div>
+    <div id="bg-placeholder">
+      <div class="icon">🖼</div>
+      <div>Фон з'явиться тут</div>
+    </div>
+    <div id="characters"></div>
+    <div id="textbox">
+      <div id="speaker"></div>
+      <div id="text">Натисніть ▶ Запустити або додайте блоки для перегляду.</div>
+      <button id="nextBtn" style="display:none" onclick="onNext()">Далі →</button>
+      <div id="choices"></div>
+    </div>
+  </div>
+</div>
+
+<div id="statusBar">
+  <span>Сцена: <b id="stScene">—</b></span>
+  <span>Змінні: <b id="stVars">—</b></span>
+  <span>Блоків: <b id="stBlocks">0</b></span>
+</div>
+
+<div id="toast"></div>
+
+<div id="demoModal">
+  <div id="demoBox">
+    <h2>🎓 Демо-проєкт</h2>
+    <p>Завантажити приклад сцени з діалогом, вибором гравця та розгалуженням? Поточний робочий простір буде очищено.</p>
+    <button class="ok" onclick="confirmDemo()">Завантажити</button>
+    <button onclick="document.getElementById('demoModal').classList.remove('open')">Скасувати</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let workspace;
+let scenes = {};
+let variables = {};
+
+// Execution state
+let execQueue = [];   // flat list of block descriptors for current scene
+let execIndex = 0;    // current position
+let waitingForUser = false;
+
+// imageData store: blockId → dataURL  (survives serialisation)
+let imageStore = {};
+
+// ══════════════════════════════════════════════════════════════
+// BLOCK DEFINITIONS
+// ══════════════════════════════════════════════════════════════
+Blockly.Blocks['start_scene'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField("🎬 СЦЕНА")
+        .appendField(new Blockly.FieldTextInput("Початок"), "NAME");
+    this.setNextStatement(true);
+    this.setColour(160);
+    this.setTooltip("Починає нову сцену. Перша сцена запуститься першою.");
+  }
+};
+
+Blockly.Blocks['set_background'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField("🖼 Фон:")
+        .appendField(new Blockly.FieldTextInput("натисни для завантаження"), "LABEL");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(20);
+    this.setTooltip("Натисніть на блок, щоб завантажити фонове зображення.");
+  }
+};
+
+Blockly.Blocks['show_image'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField("🧍 Персонаж:")
+        .appendField(new Blockly.FieldTextInput("натисни для завантаження"), "LABEL")
+        .appendField("позиція")
+        .appendField(new Blockly.FieldDropdown([
+          ["зліва","left"], ["справа","right"], ["по центру","center"]
+        ]), "POSITION");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(60);
+    this.setTooltip("Натисніть на блок, щоб завантажити зображення персонажа.");
+  }
+};
+
+Blockly.Blocks['hide_characters'] = {
+  init() {
+    this.appendDummyInput().appendField("🚫 Прибрати всіх персонажів");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(60);
+    this.setTooltip("Видаляє усіх персонажів з екрану.");
+  }
+};
+
+// FIX: speaker + text in one block
+Blockly.Blocks['display_text'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField("💬 Мовець:")
+        .appendField(new Blockly.FieldTextInput(""), "SPEAKER");
+    this.appendDummyInput()
+        .appendField("   Текст:")
+        .appendField(new Blockly.FieldTextInput("Привіт!"), "TEXT");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(230);
+    this.setTooltip("Показує репліку. Поле 'Мовець' можна залишити порожнім.");
+  }
+};
+
+Blockly.Blocks['set_variable'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField("📦 Змінна")
+        .appendField(new Blockly.FieldTextInput("здоров'я"), "VAR")
+        .appendField("=")
+        .appendField(new Blockly.FieldNumber(100, -9999, 9999), "VALUE");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(300);
+    this.setTooltip("Встановлює значення змінної.");
+  }
+};
+
+Blockly.Blocks['change_variable'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField("📦 Змінна")
+        .appendField(new Blockly.FieldTextInput("здоров'я"), "VAR")
+        .appendField(new Blockly.FieldDropdown([["+","PLUS"],["-","MINUS"]]), "OP")
+        .appendField("=")
+        .appendField(new Blockly.FieldNumber(10, 0, 9999), "VALUE");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(300);
+    this.setTooltip("Збільшує або зменшує значення змінної.");
+  }
+};
+
+Blockly.Blocks['if_block'] = {
+  init() {
+    this.appendValueInput("CONDITION").appendField("❓ Якщо");
+    this.appendStatementInput("DO").appendField("то");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(0);
+    this.setTooltip("Виконує вкладені блоки, якщо умова істинна.");
+  }
+};
+
+Blockly.Blocks['compare'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField(new Blockly.FieldTextInput("здоров'я"), "LEFT")
+        .appendField(new Blockly.FieldDropdown([
+          ["<","LT"],["<=","LTE"],["==","EQ"],[">","GT"],[">=","GTE"]
+        ]), "OP")
+        .appendField(new Blockly.FieldTextInput("50"), "RIGHT");
+    this.setOutput(true, "Boolean");
+    this.setColour(0);
+    this.setTooltip("Порівнює значення змінної з числом.");
+  }
+};
+
+Blockly.Blocks['choice'] = {
+  init() {
+    this.appendDummyInput().appendField("🔀 Вибір гравця");
+    this.appendStatementInput("OPTIONS").appendField("варіанти:");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(120);
+    this.setTooltip("Показує кнопки вибору. Після вибору переходить до сцени.");
+  }
+};
+
+Blockly.Blocks['choice_option'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField('"')
+        .appendField(new Blockly.FieldTextInput("Так"), "TEXT")
+        .appendField('" → сцена:')
+        .appendField(new Blockly.FieldTextInput("Вулиця"), "TARGET");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(140);
+    this.setTooltip("Один варіант вибору — куди перейти після нього.");
+  }
+};
+
+Blockly.Blocks['go_to_scene'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField("➡ Перейти до сцени")
+        .appendField(new Blockly.FieldTextInput("Вулиця"), "NAME");
+    this.setPreviousStatement(true);
+    this.setColour(200);
+    this.setTooltip("Переходить до іншої сцени. Блоки після цього не виконуються.");
+  }
+};
+
+// ══════════════════════════════════════════════════════════════
+// TOOLBOX
+// ══════════════════════════════════════════════════════════════
+const toolbox = {
+  kind: "categoryToolbox",
+  contents: [
+    { kind:"category", name:"🎬 Сцени",    colour:"160", contents:[
+      { kind:"block", type:"start_scene" },
+      { kind:"block", type:"go_to_scene" }
+    ]},
+    { kind:"category", name:"🖼 Вигляд",   colour:"20",  contents:[
+      { kind:"block", type:"set_background" },
+      { kind:"block", type:"show_image"     },
+      { kind:"block", type:"hide_characters"}
+    ]},
+    { kind:"category", name:"💬 Текст",    colour:"230", contents:[
+      { kind:"block", type:"display_text" }
+    ]},
+    { kind:"category", name:"📦 Змінні",   colour:"300", contents:[
+      { kind:"block", type:"set_variable"    },
+      { kind:"block", type:"change_variable" }
+    ]},
+    { kind:"category", name:"❓ Логіка",   colour:"0",   contents:[
+      { kind:"block", type:"if_block" },
+      { kind:"block", type:"compare"  }
+    ]},
+    { kind:"category", name:"🔀 Вибір",    colour:"120", contents:[
+      { kind:"block", type:"choice"        },
+      { kind:"block", type:"choice_option" }
+    ]}
+  ]
+};
+
+// ══════════════════════════════════════════════════════════════
+// INIT WORKSPACE
+// ══════════════════════════════════════════════════════════════
+workspace = Blockly.inject('blocklyDiv', {
+  toolbox,
+  trashcan: true,
+  zoom: { controls: true, wheel: true },
+  scrollbars: true,
+  theme: Blockly.Theme.defineTheme('dark', {
+    base: Blockly.Themes.Classic,
+    componentStyles: {
+      workspaceBackgroundColour: '#12111a',
+      toolboxBackgroundColour:   '#1c1b27',
+      toolboxForegroundColour:   '#e8e6ff',
+      flyoutBackgroundColour:    '#1c1b27',
+      flyoutForegroundColour:    '#e8e6ff',
+      flyoutOpacity: 1,
+      scrollbarOpacity: .4,
+    }
+  })
+});
+
+// ══════════════════════════════════════════════════════════════
+// IMAGE UPLOAD (click on block)
+// ══════════════════════════════════════════════════════════════
+workspace.addChangeListener(function(event) {
+  if (event.type !== Blockly.Events.CLICK) return;
+  const block = workspace.getBlockById(event.blockId);
+  if (!block) return;
+
+  if (block.type === "set_background" || block.type === "show_image") {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    input.onchange = e => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        imageStore[block.id] = ev.target.result;
+        const short = file.name.length > 18 ? file.name.slice(0,16)+'…' : file.name;
+        block.setFieldValue("✓ " + short, block.type === "set_background" ? "LABEL" : "LABEL");
+        showToast("Зображення завантажено: " + file.name);
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
+});
+
+// status bar block count
+workspace.addChangeListener(function() {
+  document.getElementById('stBlocks').textContent =
+    workspace.getAllBlocks(false).length;
+});
+
+// ══════════════════════════════════════════════════════════════
+// SCENE BUILDING
+// ══════════════════════════════════════════════════════════════
+function buildScenes() {
+  scenes = {};
+  workspace.getTopBlocks(true).forEach(block => {
+    if (block.type !== "start_scene") return;
+    const name = block.getFieldValue("NAME").trim();
+    if (!name) return;
+    scenes[name] = [];
+    let cur = block.getNextBlock();
+    while (cur) { scenes[name].push(cur); cur = cur.getNextBlock(); }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// PREVIEW HELPERS
+// ══════════════════════════════════════════════════════════════
+function clearPreview() {
+  document.getElementById("background").style.backgroundImage = "";
+  document.getElementById("bg-placeholder").style.display = "flex";
+  document.getElementById("characters").innerHTML = "";
+  document.getElementById("text").innerText = "";
+  document.getElementById("speaker").innerText = "";
+  document.getElementById("choices").innerHTML = "";
+  document.getElementById("nextBtn").style.display = "none";
+}
+
+function setBackground(dataURL) {
+  document.getElementById("background").style.backgroundImage = `url('${dataURL}')`;
+  document.getElementById("bg-placeholder").style.display = "none";
+}
+
+function showSpeech(speaker, text) {
+  document.getElementById("speaker").innerText = speaker || "";
+  document.getElementById("text").innerText = text;
+  document.getElementById("nextBtn").style.display = "block";
+  document.getElementById("choices").innerHTML = "";
+  waitingForUser = true;
+  document.getElementById("stScene").textContent = currentScene || "—";
+}
+
+function showChoices(options) {
+  // options: [{text, target}]
+  document.getElementById("nextBtn").style.display = "none";
+  const div = document.getElementById("choices");
+  div.innerHTML = "";
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt.text;
+    btn.onclick = () => goToScene(opt.target);
+    div.appendChild(btn);
+  });
+  waitingForUser = true;
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXECUTION ENGINE
+// ══════════════════════════════════════════════════════════════
+let currentScene = null;
+
+function goToScene(name) {
+  if (!name || !scenes[name]) {
+    showToast(`⚠ Сцена "${name}" не знайдена`);
+    return;
+  }
+  clearPreview();
+  currentScene = name;
+  document.getElementById("stScene").textContent = name;
+  execQueue = scenes[name].slice(); // copy
+  execIndex = 0;
+  waitingForUser = false;
+  runNext();
+}
+
+// Called after user presses "Далі" or a choice — continues execution
+function onNext() {
+  document.getElementById("nextBtn").style.display = "none";
+  waitingForUser = false;
+  runNext();
+}
+
+function runNext() {
+  while (execIndex < execQueue.length) {
+    const block = execQueue[execIndex];
+    execIndex++;
+
+    const stop = executeBlock(block);
+    if (stop) return; // paused, waiting for user
+  }
+  // end of scene
+  document.getElementById("nextBtn").style.display = "none";
+}
+
+function executeBlock(block) {
+  if (!block) return false;
+
+  switch (block.type) {
+
+    case "display_text": {
+      const speaker = block.getFieldValue("SPEAKER") || "";
+      const text    = block.getFieldValue("TEXT") || "";
+      showSpeech(speaker, text);
+      return true; // pause
+    }
+
+    case "set_background": {
+      const img = imageStore[block.id];
+      if (img) setBackground(img);
+      return false;
+    }
+
+    case "show_image": {
+      const img = imageStore[block.id];
+      if (img) {
+        const pos = block.getFieldValue("POSITION");
+        const el  = document.createElement("img");
+        el.src = img; el.className = `character ${pos}`;
+        document.getElementById("characters").appendChild(el);
+      }
+      return false;
+    }
+
+    case "hide_characters": {
+      document.getElementById("characters").innerHTML = "";
+      return false;
+    }
+
+    case "set_variable": {
+      const key = block.getFieldValue("VAR");
+      variables[key] = Number(block.getFieldValue("VALUE"));
+      updateVarDisplay();
+      return false;
+    }
+
+    case "change_variable": {
+      const key = block.getFieldValue("VAR");
+      const op  = block.getFieldValue("OP");
+      const val = Number(block.getFieldValue("VALUE"));
+      variables[key] = (variables[key] || 0) + (op === "PLUS" ? val : -val);
+      updateVarDisplay();
+      return false;
+    }
+
+    case "if_block": {
+      const cond = block.getInputTargetBlock("CONDITION");
+      if (cond && cond.type === "compare") {
+        const left  = variables[cond.getFieldValue("LEFT")] ?? 0;
+        const op    = cond.getFieldValue("OP");
+        const right = Number(cond.getFieldValue("RIGHT") || 0);
+        let result  = false;
+        if (op === "LT")  result = left <  right;
+        if (op === "LTE") result = left <= right;
+        if (op === "EQ")  result = left == right;
+        if (op === "GT")  result = left >  right;
+        if (op === "GTE") result = left >= right;
+
+        if (result) {
+          // inject inner blocks right before current position
+          let inner = block.getInputTargetBlock("DO");
+          const innerBlocks = [];
+          while (inner) { innerBlocks.push(inner); inner = inner.getNextBlock(); }
+          execQueue.splice(execIndex, 0, ...innerBlocks);
+        }
+      }
+      return false;
+    }
+
+    case "go_to_scene": {
+      goToScene(block.getFieldValue("NAME"));
+      return true; // pause (new scene takes over)
+    }
+
+    case "choice": {
+      const options = [];
+      let opt = block.getInputTargetBlock("OPTIONS");
+      while (opt) {
+        if (opt.type === "choice_option") {
+          options.push({
+            text:   opt.getFieldValue("TEXT"),
+            target: opt.getFieldValue("TARGET")
+          });
+        }
+        opt = opt.getNextBlock();
+      }
+      showChoices(options);
+      return true; // pause
+    }
+
+    default:
+      return false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PUBLIC CONTROLS
+// ══════════════════════════════════════════════════════════════
+function startNovel() {
+  variables = {};
+  buildScenes();
+  const first = Object.keys(scenes)[0];
+  if (first) goToScene(first);
+  else showToast("⚠ Додайте блок 🎬 СЦЕНА, щоб почати");
+}
+
+function updateVarDisplay() {
+  const pairs = Object.entries(variables).map(([k,v]) => `${k}=${v}`);
+  document.getElementById('stVars').textContent = pairs.length ? pairs.join(', ') : '—';
+}
+
+// ══════════════════════════════════════════════════════════════
+// SAVE / LOAD  — imageStore тепер зберігається в JSON
+// ══════════════════════════════════════════════════════════════
+function saveProject() {
+  buildScenes();
+  const project = {
+    version: 2,
+    timestamp: new Date().toISOString(),
+    workspace: Blockly.serialization.workspaces.save(workspace),
+    imageStore
+  };
+  const link = document.createElement('a');
+  link.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(project, null, 2));
+  link.download = 'vn_project.json';
+  link.click();
+  showToast("Проєкт збережено ✓");
+}
+
+function loadProject() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const project = JSON.parse(ev.target.result);
+        Blockly.serialization.workspaces.load(project.workspace, workspace);
+        imageStore = project.imageStore || {};
+        startNovel();
+        showToast("Проєкт завантажено ✓");
+      } catch {
+        showToast("⚠ Помилка при завантаженні файлу");
+      }
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+function clearWorkspace() {
+  if (confirm("Очистити весь робочий простір?")) {
+    workspace.clear();
+    imageStore = {};
+    clearPreview();
+    document.getElementById("text").innerText = "";
+    document.getElementById("stScene").textContent = "—";
+    document.getElementById("stVars").textContent = "—";
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// DEMO PROJECT
+// ══════════════════════════════════════════════════════════════
+function loadDemo() {
+  document.getElementById("demoModal").classList.add("open");
+}
+
+function confirmDemo() {
+  document.getElementById("demoModal").classList.remove("open");
+  workspace.clear();
+  imageStore = {};
+
+  // Build demo blocks programmatically via JSON
+  const demo = {"blocks":{"languageVersion":0,"blocks":[
+    {"type":"start_scene","id":"s1","x":30,"y":30,
+     "fields":{"NAME":"Квартира"},
+     "next":{"block":{"type":"display_text","id":"t1",
+       "fields":{"SPEAKER":"Оповідач","TEXT":"Ти прокидаєшся в невеличкій квартирі. Телефон дзвонить."},
+       "next":{"block":{"type":"display_text","id":"t2",
+         "fields":{"SPEAKER":"Марта","TEXT":"Привіт! Ти ще спиш? У нас проблема…"},
+         "next":{"block":{"type":"set_variable","id":"v1",
+           "fields":{"VAR":"сміливість","VALUE":50},
+           "next":{"block":{"type":"choice","id":"c1",
+             "inputs":{"OPTIONS":{"block":{"type":"choice_option","id":"co1",
+               "fields":{"TEXT":"Одразу бігти на допомогу","TARGET":"Вулиця"},
+               "next":{"block":{"type":"choice_option","id":"co2",
+                 "fields":{"TEXT":"Спочатку з'ясувати деталі","TARGET":"Деталі"}}}}}},
+             "next":null}}}}}}}}},
+    {"type":"start_scene","id":"s2","x":30,"y":320,
+     "fields":{"NAME":"Вулиця"},
+     "next":{"block":{"type":"change_variable","id":"cv1",
+       "fields":{"VAR":"сміливість","OP":"PLUS","VALUE":20},
+       "next":{"block":{"type":"display_text","id":"t3",
+         "fields":{"SPEAKER":"Оповідач","TEXT":"Ти вибігаєш на вулицю. Серце б'ється швидко."},
+         "next":{"block":{"type":"if_block","id":"if1",
+           "inputs":{"CONDITION":{"block":{"type":"compare","id":"cmp1",
+             "fields":{"LEFT":"сміливість","OP":"GTE","RIGHT":"60"}}},"DO":{"block":{
+               "type":"display_text","id":"t4",
+               "fields":{"SPEAKER":"Оповідач","TEXT":"Твоя сміливість висока — ти відчуваєш впевненість!"}}}},
+           "next":{"block":{"type":"display_text","id":"t5",
+             "fields":{"SPEAKER":"Марта","TEXT":"Дякую, що прийшов! Кінець демо. 🎉"}}}}}}}}}},
+    {"type":"start_scene","id":"s3","x":30,"y":610,
+     "fields":{"NAME":"Деталі"},
+     "next":{"block":{"type":"display_text","id":"t6",
+       "fields":{"SPEAKER":"Марта","TEXT":"По телефону: «Кота застряг на дереві!»"},
+       "next":{"block":{"type":"display_text","id":"t7",
+         "fields":{"SPEAKER":"Ти","TEXT":"Зрозумів. Вже їду."},
+         "next":{"block":{"type":"go_to_scene","id":"gt1",
+           "fields":{"NAME":"Вулиця"}}}}}}}}
+  ]}};
+
+  try {
+    Blockly.serialization.workspaces.load(demo, workspace);
+    startNovel();
+    showToast("Демо завантажено ✓");
+  } catch(err) {
+    console.error(err);
+    showToast("⚠ Не вдалося завантажити демо");
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
+}
+
+console.log("✅ VN Builder v2 запущено. Натисніть 🎓 Демо, щоб побачити приклад.");
+</script>
+</body>
+</html>
