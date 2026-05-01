@@ -73,12 +73,24 @@
   }
   #bg-placeholder .icon { font-size: 2.5em; }
 
-  /* characters */
-  #characters { position: absolute; bottom: 180px; width: 100%; }
-  .character { position: absolute; max-height: 58%; object-fit: contain; }
-  .left  { left: 5%;  bottom: 0; }
-  .right { right: 5%; bottom: 0; }
-  .center{ left: 50%; transform: translateX(-50%); bottom: 0; }
+
+
+
+  #slots {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 170px;
+    display: flex; align-items: flex-end;
+  }
+  .slot {
+    flex: 1; height: 100%;
+    display: flex; align-items: flex-end; justify-content: center;
+    overflow: hidden;
+  }
+  .slot img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain; display: block;
+  }
+
+
 
   /* textbox */
   #textbox {
@@ -177,7 +189,11 @@
       <div class="icon">🖼</div>
       <div>Фон з'явиться тут</div>
     </div>
-    <div id="characters"></div>
+    <div id="slots">
+      <div class="slot" id="slot-left"></div>
+      <div class="slot" id="slot-center"></div>
+      <div class="slot" id="slot-right"></div>
+    </div>
     <div id="textbox">
       <div id="speaker"></div>
       <div id="text">Натисніть ▶ Запустити або додайте блоки для перегляду.</div>
@@ -256,7 +272,7 @@ Blockly.Blocks['show_image'] = {
         ]), "POSITION");
     this.setPreviousStatement(true); this.setNextStatement(true);
     this.setColour(60);
-    this.setTooltip("Натисніть на блок, щоб завантажити зображення персонажа.");
+    this.setTooltip("Натисніть на блок, щоб завантажити зображення. Кожна позиція (зліва/центр/справа) — окремий слот.");
   }
 };
 
@@ -311,27 +327,46 @@ Blockly.Blocks['change_variable'] = {
   }
 };
 
-Blockly.Blocks['if_block'] = {
-  init() {
-    this.appendValueInput("CONDITION").appendField("❓ Якщо");
-    this.appendStatementInput("DO").appendField("то");
-    this.setPreviousStatement(true); this.setNextStatement(true);
-    this.setColour(0);
-    this.setTooltip("Виконує вкладені блоки, якщо умова істинна.");
-  }
-};
-
-Blockly.Blocks['compare'] = {
+// ❓ Якщо змінна [умова] число → показати текст
+Blockly.Blocks['if_show_text'] = {
   init() {
     this.appendDummyInput()
-        .appendField(new Blockly.FieldTextInput("здоров'я"), "LEFT")
+        .appendField("❓ Якщо")
+        .appendField(new Blockly.FieldTextInput("здоров'я"), "VAR")
         .appendField(new Blockly.FieldDropdown([
           ["<","LT"],["<=","LTE"],["==","EQ"],[">","GT"],[">=","GTE"]
         ]), "OP")
-        .appendField(new Blockly.FieldTextInput("50"), "RIGHT");
-    this.setOutput(true, "Boolean");
+        .appendField(new Blockly.FieldNumber(50), "VAL")
+        .appendField("→ текст:");
+    this.appendDummyInput()
+        .appendField("   Мовець:")
+        .appendField(new Blockly.FieldTextInput(""), "SPEAKER");
+    this.appendDummyInput()
+        .appendField("   Фраза:")
+        .appendField(new Blockly.FieldTextInput("Ти виглядаєш погано..."), "TEXT");
+    this.setPreviousStatement(true); this.setNextStatement(true);
     this.setColour(0);
-    this.setTooltip("Порівнює значення змінної з числом.");
+    this.setTooltip("Якщо умова виконується — показує текст. Інакше пропускає.");
+  }
+};
+
+// ❓ Якщо змінна [умова] число → перейти до сцени
+Blockly.Blocks['if_go_to_scene'] = {
+  init() {
+    this.appendDummyInput()
+        .appendField("❓ Якщо")
+        .appendField(new Blockly.FieldTextInput("здоров'я"), "VAR")
+        .appendField(new Blockly.FieldDropdown([
+          ["<","LT"],["<=","LTE"],["==","EQ"],[">","GT"],[">=","GTE"]
+        ]), "OP")
+        .appendField(new Blockly.FieldNumber(50), "VAL")
+        .appendField("→ сцена:");
+    this.appendDummyInput()
+        .appendField("   Назва сцени:")
+        .appendField(new Blockly.FieldTextInput("Кінець"), "TARGET");
+    this.setPreviousStatement(true); this.setNextStatement(true);
+    this.setColour(0);
+    this.setTooltip("Якщо умова виконується — переходить до сцени. Інакше продовжує далі.");
   }
 };
 
@@ -392,8 +427,8 @@ const toolbox = {
       { kind:"block", type:"change_variable" }
     ]},
     { kind:"category", name:"❓ Логіка",   colour:"0",   contents:[
-      { kind:"block", type:"if_block" },
-      { kind:"block", type:"compare"  }
+      { kind:"block", type:"if_show_text"   },
+      { kind:"block", type:"if_go_to_scene" }
     ]},
     { kind:"category", name:"🔀 Вибір",    colour:"120", contents:[
       { kind:"block", type:"choice"        },
@@ -477,7 +512,9 @@ function buildScenes() {
 function clearPreview() {
   document.getElementById("background").style.backgroundImage = "";
   document.getElementById("bg-placeholder").style.display = "flex";
-  document.getElementById("characters").innerHTML = "";
+  document.getElementById("slot-left").innerHTML = "";
+  document.getElementById("slot-center").innerHTML = "";
+  document.getElementById("slot-right").innerHTML = "";
   document.getElementById("text").innerText = "";
   document.getElementById("speaker").innerText = "";
   document.getElementById("choices").innerHTML = "";
@@ -571,16 +608,21 @@ function executeBlock(block) {
     case "show_image": {
       const img = imageStore[block.id];
       if (img) {
-        const pos = block.getFieldValue("POSITION");
-        const el  = document.createElement("img");
-        el.src = img; el.className = `character ${pos}`;
-        document.getElementById("characters").appendChild(el);
+        const pos   = block.getFieldValue("POSITION");
+        const slot  = document.getElementById("slot-" + pos);
+        const el    = document.createElement("img");
+        el.src = img;
+        slot.innerHTML = "";   // один спрайт на слот
+        slot.appendChild(el);
+      } else {
+        showToast("⚠ Натисніть на блок персонажа і завантажте зображення");
       }
       return false;
     }
 
     case "hide_characters": {
-      document.getElementById("characters").innerHTML = "";
+      ["left","center","right"].forEach(p =>
+        document.getElementById("slot-"+p).innerHTML = "");
       return false;
     }
 
@@ -600,26 +642,28 @@ function executeBlock(block) {
       return false;
     }
 
-    case "if_block": {
-      const cond = block.getInputTargetBlock("CONDITION");
-      if (cond && cond.type === "compare") {
-        const left  = variables[cond.getFieldValue("LEFT")] ?? 0;
-        const op    = cond.getFieldValue("OP");
-        const right = Number(cond.getFieldValue("RIGHT") || 0);
-        let result  = false;
-        if (op === "LT")  result = left <  right;
-        if (op === "LTE") result = left <= right;
-        if (op === "EQ")  result = left == right;
-        if (op === "GT")  result = left >  right;
-        if (op === "GTE") result = left >= right;
+    case "if_show_text": {
+      const varVal = variables[block.getFieldValue("VAR")] ?? 0;
+      const op     = block.getFieldValue("OP");
+      const num    = Number(block.getFieldValue("VAL"));
+      const ok = op==="LT"?varVal<num : op==="LTE"?varVal<=num :
+                 op==="EQ"?varVal==num: op==="GT"?varVal>num : varVal>=num;
+      if (ok) {
+        showSpeech(block.getFieldValue("SPEAKER"), block.getFieldValue("TEXT"));
+        return true; // pause for user
+      }
+      return false;
+    }
 
-        if (result) {
-          // inject inner blocks right before current position
-          let inner = block.getInputTargetBlock("DO");
-          const innerBlocks = [];
-          while (inner) { innerBlocks.push(inner); inner = inner.getNextBlock(); }
-          execQueue.splice(execIndex, 0, ...innerBlocks);
-        }
+    case "if_go_to_scene": {
+      const varVal = variables[block.getFieldValue("VAR")] ?? 0;
+      const op     = block.getFieldValue("OP");
+      const num    = Number(block.getFieldValue("VAL"));
+      const ok = op==="LT"?varVal<num : op==="LTE"?varVal<=num :
+                 op==="EQ"?varVal==num: op==="GT"?varVal>num : varVal>=num;
+      if (ok) {
+        goToScene(block.getFieldValue("TARGET"));
+        return true;
       }
       return false;
     }
@@ -728,7 +772,6 @@ function confirmDemo() {
   workspace.clear();
   imageStore = {};
 
-  // Build demo blocks programmatically via JSON
   const demo = {"blocks":{"languageVersion":0,"blocks":[
     {"type":"start_scene","id":"s1","x":30,"y":30,
      "fields":{"NAME":"Квартира"},
@@ -750,14 +793,11 @@ function confirmDemo() {
        "fields":{"VAR":"сміливість","OP":"PLUS","VALUE":20},
        "next":{"block":{"type":"display_text","id":"t3",
          "fields":{"SPEAKER":"Оповідач","TEXT":"Ти вибігаєш на вулицю. Серце б'ється швидко."},
-         "next":{"block":{"type":"if_block","id":"if1",
-           "inputs":{"CONDITION":{"block":{"type":"compare","id":"cmp1",
-             "fields":{"LEFT":"сміливість","OP":"GTE","RIGHT":"60"}}},"DO":{"block":{
-               "type":"display_text","id":"t4",
-               "fields":{"SPEAKER":"Оповідач","TEXT":"Твоя сміливість висока — ти відчуваєш впевненість!"}}}},
+         "next":{"block":{"type":"if_show_text","id":"if1",
+           "fields":{"VAR":"сміливість","OP":"GTE","VAL":60,"SPEAKER":"Оповідач","TEXT":"Твоя сміливість висока — ти відчуваєш впевненість!"},
            "next":{"block":{"type":"display_text","id":"t5",
-             "fields":{"SPEAKER":"Марта","TEXT":"Дякую, що прийшов! Кінець демо. 🎉"}}}}}}}}}},
-    {"type":"start_scene","id":"s3","x":30,"y":610,
+             "fields":{"SPEAKER":"Марта","TEXT":"Дякую, що прийшов! Кінець демо. 🎉"}}}}}}}}}}  ,
+    {"type":"start_scene","id":"s3","x":30,"y":560,
      "fields":{"NAME":"Деталі"},
      "next":{"block":{"type":"display_text","id":"t6",
        "fields":{"SPEAKER":"Марта","TEXT":"По телефону: «Кота застряг на дереві!»"},
