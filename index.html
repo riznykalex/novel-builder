@@ -179,6 +179,7 @@
   <button onclick="loadProject()">📂 Завантажити</button>
   <button onclick="loadDemo()">🎓 Демо</button>
   <button onclick="clearWorkspace()">🗑 Очистити</button>
+  <button onclick="exportGame()" style="margin-left:auto;">📤 Експорт гри</button>
 </div>
 
 <div id="main">
@@ -460,28 +461,52 @@ workspace = Blockly.inject('blocklyDiv', {
 });
 
 // ══════════════════════════════════════════════════════════════
-// IMAGE UPLOAD (click on block)
+// IMAGE UPLOAD via Cloudflare Worker
 // ══════════════════════════════════════════════════════════════
+const WORKER_URL = 'https://mindmap.riznyk-alex-mail.workers.dev';
+
+function showUploadProgress(blockId, show) {
+  const block = workspace.getBlockById(blockId);
+  if (!block) return;
+  block.setFieldValue(show ? "⏳ Завантаження…" : (imageStore[blockId] ? "✓ Готово" : "натисни для завантаження"), "LABEL");
+}
+
+async function uploadToWorker(file) {
+  const form = new FormData();
+  form.append('image', file);
+  const res  = await fetch(WORKER_URL + '/upload', { method: 'POST', body: form });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Upload failed');
+  return data.url; // публічний URL
+}
+
+async function handleImageClick(block) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async e => {
+    const file = e.target.files[0]; if (!file) return;
+    showUploadProgress(block.id, true);
+    try {
+      const url = await uploadToWorker(file);
+      imageStore[block.id] = url;
+      const short = file.name.length > 18 ? file.name.slice(0,16)+'…' : file.name;
+      block.setFieldValue("✓ " + short, "LABEL");
+      showToast("✓ Завантажено: " + file.name);
+    } catch (err) {
+      block.setFieldValue("❌ Помилка", "LABEL");
+      showToast("⚠ Помилка завантаження: " + err.message);
+      console.error(err);
+    }
+  };
+  input.click();
+}
+
 workspace.addChangeListener(function(event) {
   if (event.type !== Blockly.Events.CLICK) return;
   const block = workspace.getBlockById(event.blockId);
   if (!block) return;
-
   if (block.type === "set_background" || block.type === "show_image") {
-    const input = document.createElement('input');
-    input.type = 'file'; input.accept = 'image/*';
-    input.onchange = e => {
-      const file = e.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => {
-        imageStore[block.id] = ev.target.result;
-        const short = file.name.length > 18 ? file.name.slice(0,16)+'…' : file.name;
-        block.setFieldValue("✓ " + short, block.type === "set_background" ? "LABEL" : "LABEL");
-        showToast("Зображення завантажено: " + file.name);
-      };
-      reader.readAsDataURL(file);
-    };
-    input.click();
+    handleImageClick(block);
   }
 });
 
@@ -711,15 +736,15 @@ function updateVarDisplay() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// SAVE / LOAD  — imageStore тепер зберігається в JSON
+// SAVE / LOAD  — imageStore містить публічні URL (не base64)
 // ══════════════════════════════════════════════════════════════
 function saveProject() {
   buildScenes();
   const project = {
-    version: 2,
+    version: 3,
     timestamp: new Date().toISOString(),
     workspace: Blockly.serialization.workspaces.save(workspace),
-    imageStore
+    imageStore  // { blockId: "https://..." }
   };
   const link = document.createElement('a');
   link.href = 'data:application/json,' + encodeURIComponent(JSON.stringify(project, null, 2));
@@ -828,7 +853,261 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
 }
 
-console.log("✅ VN Builder v2 запущено. Натисніть 🎓 Демо, щоб побачити приклад.");
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT — генерує самодостатній HTML файл гри (без Blockly)
+// ══════════════════════════════════════════════════════════════
+function exportGame() {
+  buildScenes();
+  if (!Object.keys(scenes).length) {
+    showToast("⚠ Немає жодної сцени для експорту");
+    return;
+  }
+
+  // Серіалізуємо сцени у простий JSON-формат
+  const scenesData = {};
+  for (const [name, blocks] of Object.entries(scenes)) {
+    scenesData[name] = [];
+    for (const block of blocks) {
+      const b = serializeBlock(block);
+      if (b) scenesData[name].push(b);
+    }
+  }
+
+  const firstScene = Object.keys(scenesData)[0];
+  const gameData = JSON.stringify({ scenes: scenesData, first: firstScene }, null, 2);
+
+  const exported = `<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Інтерактивна історія</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #12111a; color: #e8e6ff;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+  }
+  #game {
+    width: 640px; max-width: 100%;
+    aspect-ratio: 16/10;
+    position: relative; background: #000;
+    display: flex; flex-direction: column;
+    overflow: hidden; border-radius: 8px;
+    box-shadow: 0 8px 48px rgba(0,0,0,.8);
+  }
+  #background {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+  }
+  #slots {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 170px;
+    display: flex; align-items: flex-end;
+  }
+  .slot {
+    flex: 1; height: 100%;
+    display: flex; align-items: flex-end; justify-content: center;
+    overflow: hidden;
+  }
+  .slot img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  #textbox {
+    position: relative; z-index: 10; margin-top: auto;
+    background: linear-gradient(180deg, rgba(18,17,26,0) 0%, rgba(18,17,26,.97) 18px);
+    padding: 16px 18px 14px; min-height: 170px;
+    display: flex; flex-direction: column;
+  }
+  #speaker { font-weight: 700; font-size: .9em; color: #7c6af7; margin-bottom: 6px; min-height: 18px; }
+  #text { font-size: 1em; line-height: 1.6; min-height: 60px; flex: 1; }
+  #nextBtn {
+    align-self: flex-end; margin-top: 10px;
+    padding: 8px 22px; background: #7c6af7;
+    color: #fff; border: none; border-radius: 6px;
+    cursor: pointer; font-size: .9em;
+  }
+  #nextBtn:hover { background: #6b5ae0; }
+  #choices { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+  #choices button {
+    padding: 10px 14px; background: #2a2940;
+    color: #e8e6ff; border: 1px solid #35345a;
+    border-radius: 6px; cursor: pointer; text-align: left; font-size: .9em;
+  }
+  #choices button:hover { background: #3a3860; border-color: #f76a8c; color: #f76a8c; }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="background"></div>
+  <div id="slots">
+    <div class="slot" id="slot-left"></div>
+    <div class="slot" id="slot-center"></div>
+    <div class="slot" id="slot-right"></div>
+  </div>
+  <div id="textbox">
+    <div id="speaker"></div>
+    <div id="text"></div>
+    <button id="nextBtn" style="display:none" onclick="onNext()">Далі →</button>
+    <div id="choices"></div>
+  </div>
+</div>
+<script>
+const GAME = ${gameData};
+
+let scenes    = GAME.scenes;
+let variables = {};
+let execQueue = [];
+let execIndex = 0;
+
+function clearPreview() {
+  document.getElementById('background').style.backgroundImage = '';
+  ['left','center','right'].forEach(p => document.getElementById('slot-'+p).innerHTML = '');
+  document.getElementById('text').innerText    = '';
+  document.getElementById('speaker').innerText = '';
+  document.getElementById('choices').innerHTML = '';
+  document.getElementById('nextBtn').style.display = 'none';
+}
+
+function goToScene(name) {
+  if (!scenes[name]) { console.warn('Сцена не знайдена:', name); return; }
+  clearPreview();
+  execQueue = scenes[name].slice();
+  execIndex = 0;
+  runNext();
+}
+
+function runNext() {
+  while (execIndex < execQueue.length) {
+    const b = execQueue[execIndex++];
+    if (execBlock(b)) return;
+  }
+  document.getElementById('nextBtn').style.display = 'none';
+}
+
+function onNext() {
+  document.getElementById('nextBtn').style.display = 'none';
+  runNext();
+}
+
+function evalCond(varName, op, val) {
+  const v = variables[varName] ?? 0;
+  if (op==='LT')  return v <  val;
+  if (op==='LTE') return v <= val;
+  if (op==='EQ')  return v == val;
+  if (op==='GT')  return v >  val;
+  if (op==='GTE') return v >= val;
+  return false;
+}
+
+function execBlock(b) {
+  switch (b.type) {
+    case 'set_background':
+      if (b.url) {
+        document.getElementById('background').style.backgroundImage = \`url('\${b.url}')\`;
+      }
+      return false;
+    case 'show_image':
+      if (b.url) {
+        const slot = document.getElementById('slot-' + b.position);
+        slot.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = b.url;
+        slot.appendChild(img);
+      }
+      return false;
+    case 'hide_characters':
+      ['left','center','right'].forEach(p => document.getElementById('slot-'+p).innerHTML = '');
+      return false;
+    case 'display_text':
+      document.getElementById('speaker').innerText = b.speaker || '';
+      document.getElementById('text').innerText    = b.text;
+      document.getElementById('nextBtn').style.display = 'block';
+      document.getElementById('choices').innerHTML = '';
+      return true;
+    case 'set_variable':
+      variables[b.var] = b.value;
+      return false;
+    case 'change_variable':
+      variables[b.var] = (variables[b.var] || 0) + (b.op === 'PLUS' ? b.value : -b.value);
+      return false;
+    case 'if_show_text':
+      if (evalCond(b.var, b.op, b.val)) {
+        document.getElementById('speaker').innerText = b.speaker || '';
+        document.getElementById('text').innerText    = b.text;
+        document.getElementById('nextBtn').style.display = 'block';
+        return true;
+      }
+      return false;
+    case 'if_go_to_scene':
+      if (evalCond(b.var, b.op, b.val)) { goToScene(b.target); return true; }
+      return false;
+    case 'go_to_scene':
+      goToScene(b.target);
+      return true;
+    case 'choice': {
+      document.getElementById('nextBtn').style.display = 'none';
+      const div = document.getElementById('choices');
+      div.innerHTML = '';
+      b.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.textContent = opt.text;
+        btn.onclick = () => goToScene(opt.target);
+        div.appendChild(btn);
+      });
+      return true;
+    }
+    default: return false;
+  }
+}
+
+goToScene(GAME.first);
+<\/script>
+</body>
+</html>`;
+
+  const link = document.createElement('a');
+  link.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(exported);
+  link.download = 'game.html';
+  link.click();
+  showToast("✓ Гру експортовано як game.html");
+}
+
+// Перетворює Blockly-блок у простий об'єкт для експорту
+function serializeBlock(block) {
+  switch (block.type) {
+    case 'set_background':
+      return { type: 'set_background', url: imageStore[block.id] || null };
+    case 'show_image':
+      return { type: 'show_image', url: imageStore[block.id] || null, position: block.getFieldValue('POSITION') };
+    case 'hide_characters':
+      return { type: 'hide_characters' };
+    case 'display_text':
+      return { type: 'display_text', speaker: block.getFieldValue('SPEAKER'), text: block.getFieldValue('TEXT') };
+    case 'set_variable':
+      return { type: 'set_variable', var: block.getFieldValue('VAR'), value: Number(block.getFieldValue('VALUE')) };
+    case 'change_variable':
+      return { type: 'change_variable', var: block.getFieldValue('VAR'), op: block.getFieldValue('OP'), value: Number(block.getFieldValue('VALUE')) };
+    case 'if_show_text':
+      return { type: 'if_show_text', var: block.getFieldValue('VAR'), op: block.getFieldValue('OP'), val: Number(block.getFieldValue('VAL')), speaker: block.getFieldValue('SPEAKER'), text: block.getFieldValue('TEXT') };
+    case 'if_go_to_scene':
+      return { type: 'if_go_to_scene', var: block.getFieldValue('VAR'), op: block.getFieldValue('OP'), val: Number(block.getFieldValue('VAL')), target: block.getFieldValue('TARGET') };
+    case 'go_to_scene':
+      return { type: 'go_to_scene', target: block.getFieldValue('NAME') };
+    case 'choice': {
+      const options = [];
+      let opt = block.getInputTargetBlock('OPTIONS');
+      while (opt) {
+        if (opt.type === 'choice_option') options.push({ text: opt.getFieldValue('TEXT'), target: opt.getFieldValue('TARGET') });
+        opt = opt.getNextBlock();
+      }
+      return { type: 'choice', options };
+    }
+    default: return null;
+  }
+}
+
+console.log("✅ VN Builder v3 запущено. Натисніть 🎓 Демо, щоб побачити приклад.");
 </script>
 </body>
 </html>
